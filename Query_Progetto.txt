@@ -1,0 +1,103 @@
+
+/* PER OGNI LINEA, IL DEPOSITO A CUI E' ASSEGNATO */
+
+/*select linee.nome, depositi.nome
+from linee LEFT JOIN depositi on linee.deposito=depositi.nome VERIFICATA E FUNZIONANTE*/
+
+
+/* NUMERO DI TURNI EFFETTUATI DA OGNI AUTISTA*/
+/*
+SELECT autisti.codice_fiscale as autista, count(corse.codice) as numero_corse_effettuate
+FROM autisti left join corse on autisti.codice_fiscale=corse.autista
+GROUP BY autisti.codice_fiscale VERIFICATA E FUNZIONANTE */
+
+
+/* NUMERO DI CORSE EFFETTUATE PER OGNI DIPENDENTE (SIA AUTISTI CHE CONTROLLORI) 
+
+SELECT autisti.codice_fiscale, count(*) */
+
+/* autista (nome e cognome) che ha fatto più corse su linee appartenenti al deposito di "cavalleggeri" */
+/*select autisti.nome, autisti.cognome
+from autisti
+where autisti.codice_fiscale = MAX( (select corse.autista
+                         		from corse
+                         group by corse.autista
+                         having max(count(corse.autista)) )  
+/*
+create view buffer
+select autisti.nome, autisti.cognome
+from autisti
+where autisti.codice_fiscale ALL (select corse.autista
+                                  from corse
+                                  group by corse.autista */
+                                  
+
+
+/* costo affitti mensili dei depositi */
+
+/*SELECT sum(depositi.affitto_mensile) as costo_affitti
+from depositi VERIFICATA E FUNZIONANTE*/  
+                                  
+/* numero di corse effettuate da ogni autista per ogni linea */
+
+/*select autisti.codice_fiscale, corse.linea, count(corse.autista)
+from autisti join corse on autisti.codice_fiscale=corse.linea
+group by autisti.codice_fiscale, corse.linea */
+
+/* AUTISTI CHE HANNO EFFETTUATO ALMENO UNA CORSA */
+select autisti.nome, autisti.cognome
+from autisti
+where autisti.codice_fiscale in (select corse.autista
+                                 from corse
+                                 group by corse.autista
+                                 having count(*)>0 )
+
+
+
+/* AUTISTA CHE HA EFFETTUATO IL MAGGIOR NUMERO DI TURNI */
+
+create or replace view turni_totali_autisti(autista, numero_turni) as
+select autisti.codice_fiscale, count(*) as turni_totali
+from autisti left join corse on autisti.codice_fiscale = corse.autista
+group by autisti.codice_fiscale  
+
+select autisti.nome, autisti.cognome
+from autisti
+where autisti.codice_fiscale = (select turni_totali_autisti.autista
+                                from turni_totali_autisti
+                                where turni_totali_autisti.numero_turni = (select max(turni_totali_autisti.numero_turni)
+                                                                           from turni_totali_autisti )) 
+
+/* NOME DI TUTTE LE LINEE CHE PARTONO DA PIANURA O POZZUOLI  */
+
+select linee.nome
+from linee
+where linee.partenza = "Pianura" OR linee.partenza = "Pozzuoli" 
+
+/* OPPURE IN ALTERNATIVA */
+
+select linee.nome
+from linee
+where linee.partenza = "Pianura"
+UNION
+select linee.nome
+from linee
+where linee.partenza = "Pozzuoli"
+
+/* STIPENDIO DELL'AUTISTA FRANCESCO PIO MANNA */
+
+select contratti_autisti.autista, sum(contratti_autisti.paga_per_corsa) * 4 as stipendio
+from contratti_autisti
+where contratti_autisti.autista = (select autisti.codice_fiscale
+                                   from autisti
+                                   where autisti.nome = "Francesco Pio" AND autisti.cognome = "Manna" )
+
+
+/* RESPONSABILE CHE HA STIPULATO ALMENO UN CONTRATTO CON I CONTROLLORI*/
+
+select responsabili.nome, responsabili.cognome
+from responsabili
+where responsabili.matricola in (select contratti_controllori.responsabile
+                                 from contratti_controllori
+                                 group by contratti_controllori.responsabile
+                                 having count(*)> 0 )
